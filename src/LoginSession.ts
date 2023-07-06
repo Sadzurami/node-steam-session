@@ -759,9 +759,11 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			return [`steamLoginSecure=${cookieValue}`];
 		}
 
+		const sessionId = randomBytes(12).toString('hex');
+
 		let body = {
 			nonce: this.refreshToken,
-			sessionid: randomBytes(12).toString('hex'),
+			sessionid: sessionId,
 			redir: 'https://steamcommunity.com/login/home/?goto='
 		};
 
@@ -812,7 +814,10 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			resolve(result.headers['set-cookie'].map(c => c.split(';')[0].trim()));
 		}));
 
-		return await promiseAny(transfers);
+		const cookies = await promiseAny(transfers) as string[];
+		if (!cookies.some((c) => c.includes('sessionid'))) cookies.push(`sessionid=${sessionId}`);
+
+		return cookies;
 	}
 
 	/**
